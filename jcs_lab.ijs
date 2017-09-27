@@ -1,4 +1,16 @@
-NB. lab for jcs - j client/server based on zmq
+
+0 : 0
+jcs is build with zmq
+
+zmq is an api built on top of sockets
+
+it is available across platforms and removes almost all the mundane and
+critical chores in building a solid, high-performance, scalable server
+
+if unfamiliar with zmq, it worth looking at: www.zeromq.org
+at least get an overview with: zguide.zeromq.org/page:all
+if zmq is not already installed, you'll have to look at: zeromq.org/intro:get-the-software
+)
 
 require'~addons/net/jcs/jcs.ijs'
 version_jcs_''   NB. zmq version - error if problems with zmq installation
