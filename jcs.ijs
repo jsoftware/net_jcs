@@ -53,7 +53,8 @@ jd  port range: 65100+i.100
 
 jcst=: 3 : 0
 'server'vaddress y
-d=. ('"','"',~hostpathsep jpath'~bin/jconsole'),' ~addons/net/jcs/jcs.ijs  -js "serverinit_jcs_ ''',(":y),'''"'
+jc=. jpath'~bin/',('/usr/share/j/'-:13{.jpath'~install'){::'jconsole';'ijconsole'
+d=. ('"','"',~hostpathsep jc),' ~addons/net/jcs/jcs.ijs  -js "serverinit_jcs_ ''',(":y),'''"'
 if. IFWIN do. winserver d else. fork_jtask_ d,' > /dev/null 2>&1' end.
 jcsc y-.'*'
 )
