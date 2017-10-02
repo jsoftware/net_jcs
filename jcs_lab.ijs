@@ -72,47 +72,15 @@ jcs can be used for parallelism
 following example runs n jobs on m tasks
 )
 
-qrun=: 3 : 0 NB. qrun jobs tasks
-'must have count 2'assert 2=#y
-'must be integer' assert 4=3!:0 y+0
-'must be > 0' assert y>0
-'must be < 20' assert y<20
-'jobc taskc'=. y
-taskc=. jobc<.taskc
-jobs=: '?~',"1 1 'e7',~"1 1 ":,.jobc$5 2 3
-tasks=: >jcst each 65201+i.taskc
-echo (;:'num sentence'),:(":,.i.#jobs);jobs
-echo tasks
-i=: 0
-start=. 6!:1''
-while. #tasks do.
-  'reads writes errors'=. poll_jcs_ 180000;'';<tasks
-  for_n. writes do.
-    if. #jobs do.
-      echo'start (job task): ',(":i),' ',;n
-      runa__n (":i),'[',{.jobs
-      jobs=: }.jobs
-      i=. >:i
-    else.
-NB. don't need this task anymore
-      echo 'end task: ',,;n
-      kill__n''
-      tasks=: tasks-.n
-    end.
-  end.
-  for_n. reads do.
-    a=. runz__n''
-    echo (28$' '),'finish: ',(":a),' ',;n
-  end.
-end.
-start-~6!:1''
-)
+NB. next step reads in a verb to run jobs on several tasks
+NB. the argument is: jobs, tasks [,job size]
+load 'net/jcs/qrun'
 
-NB. next step creates 3 jobs on 4 tasks - takes many seconds to run
-qrun 3 2 NB. 3 jobs and 2 tasks
+NB. this creates 3 jobs on 4 tasks of size 7 - takes many seconds to run:
+qrun 3 2 7
 
 0 : 0
-time qrun with 20 jobs and tasks between 1 and 4
+time qrun with 20 jobs and tasks between 1 and 4 and task size 6
 a quad core system running 4 tasks will run faster - but not 4 times faster
 )
 

@@ -13,4 +13,5 @@ RELEASE=: 'j806'
 FILES=: 0 : 0
 jcs.ijs
 jcs_lab.ijs
+qrun.ijs
 )
