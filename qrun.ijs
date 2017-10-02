@@ -12,7 +12,7 @@ tasks=: >jcst each 65201+i.taskc
 if. IFQT do. show=. wd @ ('msgs' [ echo) else. show=. echo end.
 show (;:'num sentence'),:(":,.i.#jobs);jobs
 show tasks
-i=: 0
+i=. 0
 start=. 6!:1''
 while. #tasks do.
   'reads writes errors'=. poll_jcs_ 180000;'';<tasks
