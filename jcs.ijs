@@ -78,6 +78,7 @@ end.
 (/:1{"1 r){r
 )
 
+NB. ZMQ_LINGER - free port at task end
 create=: 3 : 0
 'TYPE IP PORT'=: y
 address=. IP,':',":PORT

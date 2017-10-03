@@ -30,8 +30,12 @@ NB. don't need this task anymore
     end.
   end.
   for_n. reads do.
-    a=. runz__n''
-    show (28$' '),'finish: ',(":a),' ',;n
+   try.
+     a=. runz__n''
+     show (28$' '),'finish: ',(":a),' ',;n
+   catch.
+     show (28$' '),'server error: ',(;n),LF,lse__n
+   end.
   end.
 end.
 start-~6!:1''
