@@ -86,6 +86,7 @@ su=: ''
 ctx_new''
 if. TYPE-:'server' do.
  S=: socket ZMQ_REP
+ setsockopt S;ZMQ_LINGER;0
  try.
    bind S;'tcp://',address
  catch.
@@ -96,6 +97,7 @@ if. TYPE-:'server' do.
 else.
  access=: ''
  S=: socket ZMQ_REQ
+ setsockopt S;ZMQ_LINGER;0
  connect S;'tcp://',address
 end.
 )
