@@ -313,3 +313,11 @@ SERVER__=: s=. jcss y
 rpc__s=: rpcdo
 runserver__s''
 )
+
+NB. debugging stuff
+logfile=: '~temp/jcs.log'
+
+log=: 3 : 0
+(y,LF) fappend logfile
+)
+
