@@ -5,14 +5,13 @@ jcsc__=:   jcsc_jcs_
 jcss__=:   jcss_jcs_
 jcs__=:    jcs_jcs_
 
+NB.! debug task start problems
+(LF,~(18":6!:9''),'  ',(10{.'jcs-load'),'  ',8":2!:6'') fappend '~temp/zmq/',(":2!:6''),'.log'
+
+
 require'~addons/net/zmq/zmq.ijs'
 coclass'jcs'
 coinsert'jzmq'
-
-labs=: 0 : 0
-spx'~addons/net/jcs/jcs_lab.ijs'
-spx'~addons/net/jcs/jcs_jd_lab.ijs'
-)
 
 PORTS=: 65100+i.200 NB. jcs port range
 
@@ -132,14 +131,15 @@ x;ip;port
 )
 
 runserver=: 3 : 0
+'jcs-run'zmqlogx''
 while. 1 do.
- 'f1 f2'=. recvmsg'' NB. outside try/catch so break works
+ 'f1 f2'=. recvmsg'' NB. issues with break
  try.
   r=. rpc 3!:2 f2
   sendmsg 3!:1 r
  catchd.
   'error'sendmsg 13!:12''
- end.
+ end. 
 end.
 )
 
@@ -303,11 +303,13 @@ c=. uucp 'cmd /S /C "',y,'"'
 si=. (68{a.),67${.a.
 pi=. 16${.a.
 'r i1 c i2 i3 i4 f i5 i6 si pi'=. CreateProcess 0;c;0;0;0;f;0;0;si;pi
+'createprocess failed'assert 0~:r
 CloseHandle _2 ic 4{.pi
 )
 
 NB. y is port to serve - run by fork -js to start
 serverinit=: 3 : 0
+'jcs-init'zmqlogx y
 if. -.IFWIN do. (' setsid x',~unxlib'c')cd'' end. NB. so we don't get parents ctrl+c
 SERVER__=: s=. jcss y
 rpc__s=: rpcdo

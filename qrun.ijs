@@ -2,6 +2,19 @@ NB. qrun
 
 require'~addons/net/jcs/jcs.ijs'
 
+xrun=: 3 : 0
+zmqlogclearall_jzmq_'' NB. clear all zmq pid logs
+killall_jcs_''         NB. brute force clean up
+taskc=. 99
+tasks=: >jcst each 65201+i.taskc
+6!:3[2 NB. so servers works
+'jcst failed'assert taskc=#servers_jcs_''
+
+NB. all tasks started ok - following cleanup should work
+for_n. tasks do. kill__n'' end.
+i.0 0
+)
+
 qshow=: 3 : 0
 log_jcs_ y
 echo y
