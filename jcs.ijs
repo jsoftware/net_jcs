@@ -7,9 +7,13 @@ jcs__=:    jcs_jcs_
 
 NB.! debug task start problems
 (LF,~(18":6!:9''),'  ',(10{.'jcs-load'),'  ',8":2!:6'') fappend '~temp/zmq/',(":2!:6''),'.log'
+(LF,~(18":6!:9''),'  ',(10{.'jcs-uname'),'  ',(8":2!:6''),'  ',UNAME) fappend '~temp/zmq/',(":2!:6''),'.log'
 
 
 require'~addons/net/zmq/zmq.ijs'
+
+(LF,~(18":6!:9''),'  ',(10{.'zmq-loaded'),'  ',8":2!:6'') fappend '~temp/zmq/',(":2!:6''),'.log'
+
 coclass'jcs'
 coinsert'jzmq'
 
