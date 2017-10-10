@@ -8,7 +8,7 @@ jcs__=:    jcs_jcs_
 NB.! debug task start problems
 
 (LF,~(18":6!:9''),'  ',(10{.'jcs-load'),'  ',8":2!:6'') fappend '~temp/zmq/',(":2!:6''),'.log'
-(LF,~(18":6!:9''),'  ',(10{.'jcs-uname'),'  ',(8":2!:6''),'  ',;' ',~each ARGV) fappend '~temp/zmq/',(":2!:6''),'.log'
+(LF,~(18":6!:9''),'  ',(10{.'jcs-argv'),'  ',(8":2!:6''),'  ',;' ',~each ARGV) fappend '~temp/zmq/',(":2!:6''),'.log'
 (LF,~(18":6!:9''),'  ',(10{.'jcs-uname'),'  ',(8":2!:6''),'  ',UNAME) fappend '~temp/zmq/',(":2!:6''),'.log'
 
 
@@ -59,7 +59,7 @@ jd  port range: 65100+i.100
 jcst=: 3 : 0
 'server'vaddress y
 jc=. jpath'~bin/',('/usr/share/j/'-:13{.jpath'~install'){::'jconsole';'ijconsole'
-d=. ('"','"',~hostpathsep jc),' ~addons/net/jcs/jcs.ijs  -js "serverinit_jcs_ ''',(":y),'''"'
+d=. ('"','"',~hostpathsep jc),' ~addons/net/jcs/start.ijs  -js "start_jcs_ ''',(":y),'''"'
 if. IFWIN do. winserver d else. fork_jtask_ d,' > /dev/null 2>&1' end.
 jcsc y-.'*'
 )
