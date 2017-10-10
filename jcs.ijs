@@ -6,7 +6,9 @@ jcss__=:   jcss_jcs_
 jcs__=:    jcs_jcs_
 
 NB.! debug task start problems
+
 (LF,~(18":6!:9''),'  ',(10{.'jcs-load'),'  ',8":2!:6'') fappend '~temp/zmq/',(":2!:6''),'.log'
+(LF,~(18":6!:9''),'  ',(10{.'jcs-uname'),'  ',(8":2!:6''),'  ',;' ',~each ARGV) fappend '~temp/zmq/',(":2!:6''),'.log'
 (LF,~(18":6!:9''),'  ',(10{.'jcs-uname'),'  ',(8":2!:6''),'  ',UNAME) fappend '~temp/zmq/',(":2!:6''),'.log'
 
 
@@ -327,3 +329,4 @@ log=: 3 : 0
 (y,LF) fappend logfile
 )
 
+(LF,~(18":6!:9''),'  ',(10{.'jcs-loaded'),'  ',8":2!:6'') fappend '~temp/zmq/',(":2!:6''),'.log'

@@ -6,7 +6,7 @@ DESCRIPTION=: 0 : 0
 This is a J client/server built on zeromq.
 )
 
-VERSION=: '1.0.7'
+VERSION=: '1.0.8'
 
 RELEASE=: 'j806'
 
