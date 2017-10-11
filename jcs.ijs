@@ -64,6 +64,17 @@ if. IFWIN do. winserver d else. fork_jtask_ d,' > /dev/null 2>&1' end.
 jcsc y-.'*'
 )
 
+jcstx=: 3 : 0
+'server'vaddress y
+jc=. jpath'~bin/',('/usr/share/j/'-:13{.jpath'~install'){::'jconsole';'ijconsole'
+d=. ('"','"',~hostpathsep jc),' ~addons/net/jcs/start.ijs  -js "start_jcs_ ''',(":y),'''"'
+if. IFWIN do. winserver d else. fork_jtask_ d,' > /dev/null 2>&1' end.
+c=. jcsc y-.'*'
+runa__c'2!:6'''''
+PID__c=. runz__c 2000 NB. task should be able to be started in 2 seconds
+c
+)
+
 jcsc=: 3 : 0
 c=. 'jcs'conew~'client'vaddress y
 )
@@ -77,7 +88,7 @@ t=. ;:'PORT IP S TYPE'
 r=. (0,#t)$''
 for_i. conl 1 do.
  if. (<'jcs')e.copath i do.
-  r=. r,d=.  i,(<PORT__i),(<IP__i),(<TYPE__i)
+  r=. r,d=.  i,(<PORT__i),(<IP__i),(<TYPE__i),<PID__i
  end.
 end.
 (/:1{"1 r){r
@@ -91,6 +102,7 @@ S=: 0
 su=: ''
 ctx_new''
 if. TYPE-:'server' do.
+ PID=: 0
  S=: socket ZMQ_REP
  setsockopt S;ZMQ_LINGER;0
  try.
@@ -101,6 +113,7 @@ if. TYPE-:'server' do.
   e assert 0
  end.
 else.
+ PID=: 2!:6''
  access=: ''
  S=: socket ZMQ_REQ
  setsockopt S;ZMQ_LINGER;0
@@ -197,8 +210,18 @@ r=. 3!:2 f2 NB. empty boolean for value errr or for abc=:def
 r
 )
 
-poll=: 3 : 0
-poll_jzmq_ y
+runzx=: 3 : 0
+c=. coname''
+'rc reads writes errors'=. poll y;'';<c
+if. _1=rc do. ('poll error: ',strerror) assert 0 end.
+'runz did not get response'assert c e. reads
+'f1 f2'=. recvmsg''
+if. 'error'-:f1 do.
+ lse=: f2
+ 'server error' assert 0
+end.
+r=. 3!:2 f2 NB. empty boolean for value errr or for abc=:def
+r
 )
 
 NB. kill server and destroy locale
@@ -222,7 +245,7 @@ end.
 rpcdo=: 3 : 'do__ >{:y'
 
 killall=: 3 : 0
-killp servers'' NB. kill all jcs server tasks
+killp {."1 servers'' NB. kill all servers
 t=. {."1 jcs''
 for_n. t do. destroy__n'' end.
 'orphaned sockets'assert 0=#sockets_jzmq_
@@ -230,24 +253,25 @@ ctx_term''
 i.0 0
 )
 
-killp=: 3 : 0 "0
-'do not kill yourself!'assert y~:2!:6''
-d=. servers y
-i=. y i.~{."1 d
-if. i<#d do.
- pid=. ":{:i{d
- if. IFWIN do.
-  shell'taskkill /F /PID ',pid
- else.
-  2!:0 'kill ',pid
- end.
+NB. killp port(s)
+killp=: 3 : 0
+s=. servers''
+p=. {."1 s
+y=. y#~y e. p NB. remove ports not in use by servers
+pids=. 1{"1 s#~p e. y
+if. 0=#pids do. return. end.
+if. IFWIN do.
+ shell 'taskkill /f ', ;(<' /pid '),each":each<"0 pids
+else.
+ 2!:0 'kill ',":pids
+end. 
+for_n. y do.
  try.
-  c=. loc y
+  c=. loc n
   destroy__c''
  catch.
  end.
-end.
-i.0 0
+end. 
 )
 
 loc=: 3 : 0
@@ -297,20 +321,22 @@ end.
  d/:{."1 d
 )
 
-NB. windows createprocess - borrowed from jum
-NB. fork leaves stdin/stdout hooked up and does not work
-NB. the following should be refactored into jtasks
+NB. windows createprocess
+NB. fork_jtask_ leaves stdin/stdout hooked up
+NB. following should be refactored into jtasks
 NB. /S strips leading " and last " and leaves others alone
+NB. win32 requires 104->68 ; 16->24 ; _2 ic 8{.pi -> _3 ic 16{.pi
 winserver=: 3 : 0
+'only valid on win64'assert IF64
 CloseHandle=. 'kernel32 CloseHandle i x'&cd"0
 CreateProcess=. 'kernel32 CreateProcessW i x *w x x i  i x x *c *c'&cd
 f=. 16b08000000
 c=. uucp 'cmd /S /C "',y,'"'
-si=. (68{a.),67${.a.
-pi=. 16${.a.
+si=. (104{a.),104${.a.
+pi=. 24${.a.
 'r i1 c i2 i3 i4 f i5 i6 si pi'=. CreateProcess 0;c;0;0;0;f;0;0;si;pi
 'createprocess failed'assert 0~:r
-CloseHandle _2 ic 4{.pi
+CloseHandle _3 ic 16{.pi
 )
 
 NB. y is port to serve - run by fork -js to start

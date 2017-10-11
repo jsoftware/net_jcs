@@ -7,7 +7,7 @@ zmqlogclearall_jzmq_'' NB. clear all zmq pid logs
 killall_jcs_''         NB. brute force clean up
 taskc=. 99
 tasks=: >jcst each 65201+i.taskc
-6!:3[2 NB. so servers works
+6!:3[5 NB. so servers works
 'jcst failed'assert taskc=#servers_jcs_''
 
 NB. all tasks started ok - following cleanup should work
@@ -40,8 +40,7 @@ tsks=. tasks=: >jcst each 65201+i.taskc
 i=. 0
 start=. 6!:1''
 while. #tasks do.
-  'rc strerror reads writes errors'=. poll_jcs_ timeout;'';<tasks
-  if. _1=rc do. ('poll error: ',strerror) assert 0 end.
+  'rc reads writes errors'=. poll_jcs_ timeout;'';<tasks
   if.  0=rc do. qshow'poll 0:' end.
   for_n. writes do.
     if. #jobs do.
