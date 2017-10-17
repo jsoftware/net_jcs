@@ -1,4 +1,3 @@
-
 0 : 0
 jcs is build with zmq
 
@@ -15,13 +14,13 @@ if zmq is not already installed, you'll have to look at: zeromq.org/intro:get-th
 require'~addons/net/jcs/jcs.ijs'
 version_jcs_''   NB. zmq version - error if problems with zmq installation
 port=: 65201     NB. use this port
-killp_jcs_ port  NB. kill an previous server on this port
+killp_jcs_ port  NB. kill any previous use of this port
 c=: jcst port    NB. create server task and client
 run__c'i.2 3'    NB. run sentence on server
 run__c'2+a.'
 lse__c           NB. last server error
 run__c'notdef'   NB. ". is different than immex - no value error
-killp_jcs_ 65202 NB. kill any previous server on this port
+killp_jcs_ 65202
 d=: jcst port+1  NB. create another server
 run__d'a=: i.2 3'
 run__c'a=: 7'
@@ -56,8 +55,8 @@ NB. next sentence won't show until it completes - takes 5 seconds
 run__c'6!:3[5' NB. server sleeps for 5 and we wait for it to finish
 runa__c'6!:3[5' NB. server starts sentence - we do not wait
 NB. wait a bit for the server to finish
-runz__c''      NB. get server result - wait if necessary
-runz__c''      NB. error - runa required before runz
+runz__c 0      NB. get server result - wait if necessary
+runz__c 2000   NB. error - runa required before runz
 kill__c''      NB. kill server and close locale
 c=: jcst port
 c=: jcst port+1

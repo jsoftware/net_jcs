@@ -2,41 +2,21 @@ NB. qrun
 
 require'~addons/net/jcs/jcs.ijs'
 
-xrun=: 3 : 0
-zmqlogclearall_jzmq_'' NB. clear all zmq pid logs
-killall_jcs_''         NB. brute force clean up
-taskc=. 99
-tasks=: >jcst each 65201+i.taskc
-6!:3[5 NB. so servers works
-'jcst failed'assert taskc=#servers_jcs_''
-
-NB. all tasks started ok - following cleanup should work
-for_n. tasks do. kill__n'' end.
-i.0 0
-)
-
 qshow=: 3 : 0
-log_jcs_ y
 echo y
 if. IFQT do. wd'msgs' end.
 )
 
-NB. [sleep - default 0] qrun job_count , task_count , [job_size default 7 - power of 10]
-NB. sleep for sleep seconds before first use after starting tasks
 qrun=: 3 : 0
-0 qrun y
-:
 'must have count 2 or 3' assert (#y) e. 2 3
 'must be integer' assert 4=3!:0 y+0
 'must be > 0' assert y>0
 'jobc taskc joblen'=. 3 {. y,7
-killall_jcs_'' NB. brute force clean up
-'' fwrite logfile_jcs_
+killp_jcs_'' NB. brute force clean up
 timeout=. 5000 NB. 5 second poll timeout
 taskc=. jobc<.taskc
 jobs=: '?~',"1 1 ('e',":joblen),~"1 1 ":,.jobc$5 2 3
-tsks=. tasks=: >jcst each 65201+i.taskc
-6!:3 x NB. see if sleep before 1st use avoids hang
+tsks=. tasks=: jcst 65201+i.taskc
 i=. 0
 start=. 6!:1''
 while. #tasks do.
@@ -45,7 +25,7 @@ while. #tasks do.
   for_n. writes do.
     if. #jobs do.
       qshow 'start:  ',":i,tsks i. n
-      t=. (":i,tsks i.n),'[',({.jobs),'[log_jcs_ ''pid:    ',(":i,tsks i.n),''','' '',','":2!:6'''''
+      t=. (":i,tsks i.n),'[',({.jobs)
       runa__n t
       jobs=: }.jobs
       i=. >:i
@@ -57,7 +37,7 @@ while. #tasks do.
   end.
   for_n. reads do.
    try.
-     a=. runz__n''
+     a=. runz__n 0
      qshow 'finish: ',": a
    catch.
      qshow 'error:  ',(;n),LF,lse__n

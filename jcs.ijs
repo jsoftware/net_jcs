@@ -5,16 +5,7 @@ jcsc__=:   jcsc_jcs_
 jcss__=:   jcss_jcs_
 jcs__=:    jcs_jcs_
 
-NB.! debug task start problems
-
-(LF,~(18":6!:9''),'  ',(10{.'jcs-load'),'  ',8":2!:6'') fappend '~temp/zmq/',(":2!:6''),'.log'
-(LF,~(18":6!:9''),'  ',(10{.'jcs-argv'),'  ',(8":2!:6''),'  ',;' ',~each ARGV) fappend '~temp/zmq/',(":2!:6''),'.log'
-(LF,~(18":6!:9''),'  ',(10{.'jcs-uname'),'  ',(8":2!:6''),'  ',UNAME) fappend '~temp/zmq/',(":2!:6''),'.log'
-
-
 require'~addons/net/zmq/zmq.ijs'
-
-(LF,~(18":6!:9''),'  ',(10{.'zmq-loaded'),'  ',8":2!:6'') fappend '~temp/zmq/',(":2!:6''),'.log'
 
 coclass'jcs'
 coinsert'jzmq'
@@ -25,7 +16,8 @@ help=: 0 : 0
 c=: jcst 65201         - create server task / client locale for localhost:65201
     run__c'i.2 3'      - run sentence on server
     runa__c'6!:3[9'    - run - no wait
-    runz__c''          - get runa result
+    runz__c 0          - get runa result - no timeout
+    runz__c 2000       - 2 second timeout
     runsu__c s         - run as superuser - su in client/server locales must match
     run__c'notdef'     - ". differs from imex - 0$0 instead of value error
     kill__c''          - kill server task and destroy client local
@@ -43,8 +35,9 @@ c=: jscc 65201         - create client locale
 c=: loc_jcs_ 65201     - locale from port
     servers_jcs_''     - server ports+pids for jcs port range
     servers_jcs_ p...  - server ports+pids for port(s)
-    killp_jcs_ p...    - kill server for port(s) p and destroy locale
-    killall_jcs_''     - kill all servers, destroy all client/server locales, and do ctx_term
+    killp_jcs_ p...    - kill server/client for port(s) p
+    killp_jcs_ ''      - kill all ports
+    killall_jcs_''     - kill all ports and do ctx_term
 
     poll_jcs_ timeout;'';<tasks - timeout milliseconds ; 0 immediate ; _1 forever
     poll_jcs_ 0;'';<{."1 jcs''  - '' could be extended to ZMQ_POLLIN, etc flags
@@ -56,7 +49,9 @@ jd  port range: 65100+i.100
 65201 '65201' 'localhost:65201' '192.168.0.23:65201' '*:65201'
 )
 
-jcst=: 3 : 0
+doin=: 4 : '(<x)(4 : ''do__y x'')each<"0 y' NB. run sentence in each locale
+
+starttask=: 3 : 0 
 'server'vaddress y
 jc=. jpath'~bin/',('/usr/share/j/'-:13{.jpath'~install'){::'jconsole';'ijconsole'
 d=. ('"','"',~hostpathsep jc),' ~addons/net/jcs/start.ijs  -js "start_jcs_ ''',(":y),'''"'
@@ -64,14 +59,52 @@ if. IFWIN do. winserver d else. fork_jtask_ d,' > /dev/null 2>&1' end.
 jcsc y-.'*'
 )
 
-jcstx=: 3 : 0
-'server'vaddress y
-jc=. jpath'~bin/',('/usr/share/j/'-:13{.jpath'~install'){::'jconsole';'ijconsole'
-d=. ('"','"',~hostpathsep jc),' ~addons/net/jcs/start.ijs  -js "start_jcs_ ''',(":y),'''"'
-if. IFWIN do. winserver d else. fork_jtask_ d,' > /dev/null 2>&1' end.
-c=. jcsc y-.'*'
-runa__c'2!:6'''''
-PID__c=. runz__c 2000 NB. task should be able to be started in 2 seconds
+NB. log jcst failures
+logjcst=: 4 : 0
+t=. (12{.x),' ',":y
+echo t
+1!:5 :: [ <jpath'~temp/zmq'
+(LF,~(isotimestamp 6!:0''),'  ',t) fappend '~temp/zmq/jcst.log'
+)
+
+NB. start 1 or more server tasks
+NB. jcst 65201 -  jcst 65201 65202 - jcst '*:65202' - jcts 65201;'*:65202'
+jcst=: 3 : 0
+r=. (<'server')vaddress each y NB. validate arg
+p=. >{:"1 >r
+'duplicate port'assert (#p)-:#~.p
+c=. >starttask each y
+return.
+validatetasks c
+)
+
+NB. possible bug (windows?) - start server task can fail
+NB. validate new tasks - timeout getpid and jcs/jzmq names defined
+validatetasks=: 3 : 0
+c=.y
+bad=. 0
+a=. nl_jcs_''
+b=. nl_jzmq_''
+for_n. c do.
+ try.
+  runa__n'2!:6'''''
+  PID__n=: runz__n 2000
+  d=. a-.(run__n'nl_jcs_''''')-.<'start'
+  if. #d do. 
+   'jcs-missing'logjcst (;n),' ',(":PORT__n,PID__n),' ',;d,each' '
+   bad=. >:bad
+  end. 
+  fd=. b-.run__n'nl_jzmq_'''''
+  if. #d do.
+   'jzmq-missing'logjcst (;n),' ',(":PORT__n,PID__n),' ',;d,each' '
+   bad=. >:bad
+  end. 
+ catch.
+  'timeout'logjcst (;n),' ',":PORT__n
+  bad=. >:bad
+ end.
+end.
+'task(s) did not start properly (~temp/zmq/jcst.log)'assert bad=0
 c
 )
 
@@ -150,7 +183,6 @@ x;ip;port
 )
 
 runserver=: 3 : 0
-'jcs-run'zmqlogx''
 while. 1 do.
  'f1 f2'=. recvmsg'' NB. issues with break
  try.
@@ -183,14 +215,14 @@ f1;f2
 
 run=: 3 : 0
 runa y
-runz''
+runz 0
 )
 
 runsu=: 3 : 0
 t=. access
 access=: su
 runa y
-r=. runz''
+r=. runz 0
 access=: t
 r
 )
@@ -200,7 +232,14 @@ sendmsg 3!:1 (<access),<y
 i.0 0
 )
 
+NB. y is timeout millis - 0 for infinite
 runz=: 3 : 0
+if. 0~:y do.
+ c=. coname''
+ 'rc reads writes errors'=. poll y;'';<c
+ if. _1=rc do. ('poll error: ',strerror) assert 0 end.
+ 'timeout - did not get response'assert c e. reads
+end.
 'f1 f2'=. recvmsg''
 if. 'error'-:f1 do.
  lse=: f2
@@ -214,14 +253,8 @@ runzx=: 3 : 0
 c=. coname''
 'rc reads writes errors'=. poll y;'';<c
 if. _1=rc do. ('poll error: ',strerror) assert 0 end.
-'runz did not get response'assert c e. reads
-'f1 f2'=. recvmsg''
-if. 'error'-:f1 do.
- lse=: f2
- 'server error' assert 0
-end.
-r=. 3!:2 f2 NB. empty boolean for value errr or for abc=:def
-r
+'timeout - did not get response'assert c e. reads
+runz''
 )
 
 NB. kill server and destroy locale
@@ -245,9 +278,7 @@ end.
 rpcdo=: 3 : 'do__ >{:y'
 
 killall=: 3 : 0
-killp {."1 servers'' NB. kill all servers
-t=. {."1 jcs''
-for_n. t do. destroy__n'' end.
+killp''
 'orphaned sockets'assert 0=#sockets_jzmq_
 ctx_term''
 i.0 0
@@ -255,7 +286,19 @@ i.0 0
 
 NB. killp port(s)
 killp=: 3 : 0
+a=. y
+if. a-:'' do.
+ a=. >1{"1 jcs'' NB. all ports in jcs
+end.
+for_n. a do.
+ try.
+  c=. loc n
+  destroy__c''
+ catch.
+ end.
+end. 
 s=. servers''
+if.  ''-:y do. y=. {."1 s end.
 p=. {."1 s
 y=. y#~y e. p NB. remove ports not in use by servers
 pids=. 1{"1 s#~p e. y
@@ -265,13 +308,7 @@ if. IFWIN do.
 else.
  2!:0 'kill ',":pids
 end. 
-for_n. y do.
- try.
-  c=. loc n
-  destroy__c''
- catch.
- end.
-end. 
+i.0 0
 )
 
 loc=: 3 : 0
@@ -341,18 +378,65 @@ CloseHandle _3 ic 16{.pi
 
 NB. y is port to serve - run by fork -js to start
 serverinit=: 3 : 0
-'jcs-init'zmqlogx y
 if. -.IFWIN do. (' setsid x',~unxlib'c')cd'' end. NB. so we don't get parents ctrl+c
 SERVER__=: s=. jcss y
 rpc__s=: rpcdo
 runserver__s''
 )
 
-NB. debugging stuff
-logfile=: '~temp/jcs.log'
+0 : 0
+timing mystery
+ loop to create task and get pid is SLOW (nearly 40 times slower)
+ loop to create tasks and loop to get pids is FAST  
 
-log=: 3 : 0
-(y,LF) fappend logfile
+ do timings with testa, testb, and testc 
+
+task start mystery
+ occasionally a task does not start properly - the script loads are damaged and there is an error
 )
 
-(LF,~(18":6!:9''),'  ',(10{.'jcs-loaded'),'  ',8":2!:6'') fappend '~temp/zmq/',(":2!:6''),'.log'
+test=: 3 : 0
+killp_jcs_''
+a=. timex'testa y'
+killp_jcs_''
+b=. timex'testb y'
+killp_jcs_''
+c=. timex'testb y'
+'3 timings to do the same thing: ',":a,b,c
+)
+
+
+NB. SLOW - create task and get pid in loop
+testa=: 3 : 0
+cs=. ''
+ps=. ''
+for_i. i.y do.
+ c=. jcst 65201+i
+ p=. run__c '2!:6'''''
+ cs=. cs,c
+ ps=. ps,<p
+end.
+pids__=: ps
+)
+
+NB. FAST - create tasks in loop and the get pids in loop
+testb=: 3 : 0
+cs=. ''
+ps=. ''
+for_i. i.y do.
+ c=. jcst 65201+i
+ cs=. cs,c
+end.
+for_i. i.y do.
+ c=. i{cs
+ p=. run__c '2!:6'''''
+ ps=. ps,<p
+end.
+pids__=: ps
+)
+
+NB. FAST - same as fast with less code - 2 loops
+testc=: 3 : 0
+c=. >jcst each 65201+i.y
+'run''2!:6 '''''''' '' ' doin c
+)
