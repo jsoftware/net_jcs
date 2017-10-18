@@ -13,6 +13,8 @@ coinsert'jzmq'
 PORTS=: 65100+i.200 NB. jcs port range
 
 help=: 0 : 0
+see warning_jcs_ for critical info on programming servers
+
 c=: jcst 65201         - create server task / client locale for localhost:65201
     run__c'i.2 3'      - run sentence on server
     runa__c'6!:3[9'    - run - no wait
@@ -41,12 +43,40 @@ c=: loc_jcs_ 65201     - locale from port
 
     poll_jcs_ timeout;'';<tasks - timeout milliseconds ; 0 immediate ; _1 forever
     poll_jcs_ 0;'';<{."1 jcs''  - '' could be extended to ZMQ_POLLIN, etc flags
+    
+    jcstvalidate c     - validate jcst tasks started properly
 
 jcs port range: 65100+i.200
 jd  port range: 65100+i.100
 ~jd port range: 65200+i.100
 
 65201 '65201' 'localhost:65201' '192.168.0.23:65201' '*:65201'
+)
+
+warning=: 0 : 0
+WARNING:
+ multiple J tasks introduce new programming concerns
+ in particular, there are conflicts with tasks writing the same file
+ as fwrite/fappend/... run without interlocks
+ 
+ tasks appending log records to the same file will seem to work
+ until there is a mishmash of complete and partial records
+ 
+ a task writing, then reading could get data written by another task
+ or, extra confusing, partial data as the read happened mid write
+
+ a possible solution is to add pid (2!:6'') to file names
+
+ a possible solution for ~temp is to add pid to the ~temp path 
+
+ different tasks must either use different names for writing files
+ or use a lock mechanism such as semaphore, mutex, or file lock
+ 
+ Jsoftware tries to ensure there are no multiple task conflicts
+ in the standard profile or initializing standard front ends
+ 
+ you need to handle conflicts in startup.ijs and other scripts
+ you may want startup.ijs to do nothing in a server (check ARGV)
 )
 
 doin=: 4 : '(<x)(4 : ''do__y x'')each<"0 y' NB. run sentence in each locale
@@ -74,13 +104,10 @@ r=. (<'server')vaddress each y NB. validate arg
 p=. >{:"1 >r
 'duplicate port'assert (#p)-:#~.p
 c=. >starttask each y
-return.
-validatetasks c
 )
 
-NB. possible bug (windows?) - start server task can fail
-NB. validate new tasks - timeout getpid and jcs/jzmq names defined
-validatetasks=: 3 : 0
+NB. jcst failures are hard to debug - jcstvalidate might help
+jcstvalidate=: 3 : 0
 c=.y
 bad=. 0
 a=. nl_jcs_''
@@ -121,7 +148,7 @@ t=. ;:'PORT IP S TYPE'
 r=. (0,#t)$''
 for_i. conl 1 do.
  if. (<'jcs')e.copath i do.
-  r=. r,d=.  i,(<PORT__i),(<IP__i),(<TYPE__i),<PID__i
+  r=. r,d=.  i,(<PORT__i),(<IP__i),<TYPE__i
  end.
 end.
 (/:1{"1 r){r
@@ -135,7 +162,6 @@ S=: 0
 su=: ''
 ctx_new''
 if. TYPE-:'server' do.
- PID=: 0
  S=: socket ZMQ_REP
  setsockopt S;ZMQ_LINGER;0
  try.
@@ -146,7 +172,6 @@ if. TYPE-:'server' do.
   e assert 0
  end.
 else.
- PID=: 2!:6''
  access=: ''
  S=: socket ZMQ_REQ
  setsockopt S;ZMQ_LINGER;0

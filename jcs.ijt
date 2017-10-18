@@ -70,6 +70,8 @@ jcs can be used for parallelism
 following example runs n jobs on m tasks
 )
 
+warning_jcs_
+
 NB. next step reads in a verb to run jobs on several tasks
 NB. the argument is: jobs, tasks [,job size]
 load 'net/jcs/qrun'
