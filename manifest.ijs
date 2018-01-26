@@ -6,9 +6,9 @@ DESCRIPTION=: 0 : 0
 This is a J client/server built on zeromq.
 )
 
-VERSION=: '1.0.14'
+VERSION=: '1.0.15'
 
-RELEASE=: 'j806'
+RELEASE=: 'j806 j807'
 
 FILES=: 0 : 0
 jcs.ijs
