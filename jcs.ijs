@@ -1,5 +1,4 @@
 NB. J client server - built on zmq
-
 jcst__=:   jcst_jcs_
 jcsc__=:   jcsc_jcs_
 jcss__=:   jcss_jcs_
@@ -10,13 +9,21 @@ require'~addons/net/zmq/zmq.ijs'
 coclass'jcs'
 coinsert'jzmq'
 
-PORTS=: 65100+i.200 NB. jcs port range
+3 : 0 '' NB. one time init on load
+if. _1=nc <'petasks' do. peports=: petasks=: '' end.
+)
+
+PORTBASE=:   65100
+PORTS=:      PORTBASE+i.200 NB. jcs port range
 
 help=: 0 : 0
-see warning_jcs_ for critical info on programming servers
+see help_warning_jcs_ for critical info on programming servers
+
+see help_pe_jcs_ for help on parallel each
 
 c=: jcst 65201         - create server task / client locale for localhost:65201
     run__c'i.2 3'      - run sentence on server
+    run__c'2+jcs_p0+jcs_p1';4 5;i.2 3 - run sentence with data
     runa__c'6!:3[9'    - run - no wait
     runz__c 0          - get runa result - no timeout
     runz__c 2000       - 2 second timeout
@@ -27,7 +34,7 @@ c=: jcst 65201         - create server task / client locale for localhost:65201
 c=: jcst '*:65201'     - create server task / client locale - bind any
 c=: jcss 65201         - create server locale - bind localhost
 c=: jcss '*:65201'     - create server locale - bind any
-c=: jscc 65201         - create client locale
+c=: jcsc 65201         - create client locale
 
     destroy__c''       - destroy client or server locale
     jcs''              - jcs locale report
@@ -47,13 +54,26 @@ c=: loc_jcs_ 65201     - locale from port
     jcstvalidate c     - validate jcst tasks started properly
 
 jcs port range: 65100+i.200
-jd  port range: 65100+i.100
-~jd port range: 65200+i.100
 
 65201 '65201' 'localhost:65201' '192.168.0.23:65201' '*:65201'
 )
 
-warning=: 0 : 0
+help_pe=: 0 : 0
+parallel each
+tasks are initialized only once
+ task init and script loads are overhead
+ and should usually only be done once
+
+   peinit_jcs_ ports NB.ports to init for pe
+   petasks_jcs_      NB. pe task locales
+   peports_jcs_      NB. pe ports
+   peset_jcs_  s     NB. run sentence s in each pe task
+   peload_jcs_ ijs   NB. load script ijs in each pe task
+   pe_jcs_ s;<right  NB. s each right
+   pe_jcs_ s;(<left),<right NB. left s each right
+)
+
+help_warning=: 0 : 0
 WARNING:
  multiple J tasks introduce new programming concerns
  in particular, there are conflicts with tasks writing the same file
@@ -147,7 +167,7 @@ jcs=: 3 : 0
 t=. ;:'PORT IP S TYPE'
 r=. (0,#t)$''
 for_i. conl 1 do.
- if. (<'jcs')e.copath i do.
+ if. (<'jcs')={.copath i do.
   r=. r,d=.  i,(<PORT__i),(<IP__i),<TYPE__i
  end.
 end.
@@ -253,7 +273,7 @@ r
 )
 
 runa=: 3 : 0
-sendmsg 3!:1 (<access),<y
+sendmsg 3!:1 (<access),boxopen y
 i.0 0
 )
 
@@ -300,7 +320,15 @@ else.
 end.
 )
 
-rpcdo=: 3 : 'do__ >{:y'
+NB. set jcs_pa__,jcs_ps__,jcs_p0__,... and do__ jcs_ps__
+NB. access,sentence[,p0,p1,...]
+rpcdo=: 3 : 0
+('jcs_pa__ jcs_ps__',;(<'__'),~each(<' jcs_p'),each ":each i._2+#y)=: y
+t=. nc__<jcs_ps__
+if.  0<t do. do__ '5!:5<jcs_ps__' return. end. 
+if. _1=t do. ('value error: ',jcs_ps__)13!:8[21 return. end.
+do__ jcs_ps__
+)
 
 killall=: 3 : 0
 killp''
@@ -411,13 +439,13 @@ runserver__s''
 
 0 : 0
 timing mystery
- loop to create task and get pid is SLOW (nearly 40 times slower)
+ loop to create task and get pid is SLOW
  loop to create tasks and loop to get pids is FAST  
 
  do timings with testa, testb, and testc 
 
 task start mystery
- occasionally a task does not start properly - the script loads are damaged and there is an error
+ occasionally a task script loads are damaged and there is an error
 )
 
 test=: 3 : 0
@@ -429,7 +457,6 @@ killp_jcs_''
 c=. timex'testb y'
 '3 timings to do the same thing: ',":a,b,c
 )
-
 
 NB. SLOW - create task and get pid in loop
 testa=: 3 : 0
@@ -464,4 +491,103 @@ NB. FAST - same as fast with less code - 2 loops
 testc=: 3 : 0
 c=. >jcst each 65201+i.y
 'run''2!:6 '''''''' '' ' doin c
+)
+
+
+NB. parallel each
+peinit=: 3 : 0
+killp peports
+peports=: y
+petasks=: jcst y
+i.0 0
+)
+
+peset=: 3 : 0
+for_c. petasks do. run__c y end.
+i.0 0
+)
+
+peload=: 3 : 0
+peset 'load ''',y,''''
+)
+
+NB. pe sentence;<data
+pe=: 3 : 0
+dyad=. 3=#y
+if. dyad do.
+ 's left right'=. y
+ 'not strict conformance'assert (#left)=#right
+else.
+ 's right'=. y
+end.
+rs=. '' NB. job results
+ns=. '' NB. job numbers
+c=. 0
+error=: 0
+while. (#rs)<#right do. NB. need more results
+  'rc reads writes errors'=. poll 5000;'';<petasks
+  if.  0=rc do. echo'jpe jcs poll' end.
+  for_n. writes do.
+   if. c=#right do. break. end.
+   jobnum__n=: c
+   
+   if. dyad do.
+    runa__n ('jcs_p0',s,' jcs_p1');(c{left),c{right
+   else.
+    runa__n (s,' jcs_p0');c{right
+   end.
+   
+   c=. >:c
+  end.
+  for_n. reads do.
+   try.
+     ns=. ns,jobnum__n
+     rs=. rs,<runz__n 0
+   catch.
+     rs=. rs,<lse__n 
+     error=: 1
+   end.
+  end.
+end.
+if. error do. echo 'errors in pe result' end.
+rs/:ns
+)
+
+NB. parallel jobs
+NB. following is an example that runs jobs in multiple tasks
+NB. y is number of tasks to create to run jobs
+pj=: 3 : 0
+j=. jobs__
+p=. PORTBASE+i.y
+killp p
+tasks=. jcst ((#j)<.#p){.p NB. don't create more tasks than jobs
+rs=. '' NB. job results
+ns=. '' NB. job numbers
+i=. 0
+error=.0
+while. #tasks do.
+  'rc reads writes errors'=. poll 5000;'';<tasks
+  if.  0=rc do. qshow'poll 0:' end.
+  for_n. writes do.
+    if. i<#j do.
+      jobnum__n=: i
+      runa__n i{j
+      i=. >:i
+    else.
+      tasks=. tasks-.n
+      kill__n''
+    end.
+  end.
+  for_n. reads do.
+   try.
+     ns=. ns,jobnum__n
+     rs=. rs,<runz__n 0
+   catch.
+     rs=. rs,<lse__n
+     error=. 1
+   end.
+  end.
+end.
+if. error do. echo 'errors in result' end.
+rs/:ns
 )

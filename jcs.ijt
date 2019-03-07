@@ -1,26 +1,42 @@
+LABTITLE=: 'Client/Server - parallel each - parallel jobs (raw)'
+
+require'~addons/net/jcs/jcs.ijs'
+
 0 : 0
-jcs is built with zmq
+jcs provides J client/server facilities
+ servers can be on local or remote machines
+ includes parallel each and parallel jobs
 
-zmq is an api built on top of sockets
+jcs is built with the zmq shared library built on sockets
 
-zmq is available across platforms and removes most of the mundane and
-critical chores in building a solid, high-performance, scalable server
+zmq is available across platforms and removes most of
+ the mundane and critical chores in building a solid,
+ high-performance, scalable server
 
 zmq resources at: www.zeromq.org
 get an overview:  zguide.zeromq.org/page:all
 zmq install info: zeromq.org/intro:get-the-software
-)
 
-require'~addons/net/jcs/jcs.ijs'
+for summary help:
+   help_jcs_
+   help_warning_jcs_
+   help_pe_jcs_ 
+) 
+
+NB. some steps take several seconds to run - patience please
 version_jcs_''   NB. zmq version - error if problems with zmq installation
-port=: 65201     NB. use this port
+[port=: PORTBASE_jcs_ NB. use this port
 killp_jcs_ port  NB. kill any previous use of this port
 c=: jcst port    NB. create server task and client
 run__c'i.2 3'    NB. run sentence on server
+NB. data can be passed - data has jcs_pN name
+run__c'2+jcs_p0';i.3 4 
+run__c'2+jcs_p0+jcs_p1';4 5;i.2 3 
 run__c'2+a.'
 lse__c           NB. last server error
-run__c'notdef'   NB. ". is different than immex - no value error
-killp_jcs_ 65202
+run__c'notdef'
+lse__c           NB. last server error
+killp_jcs_ port+1
 d=: jcst port+1  NB. create another server
 run__d'a=: i.2 3'
 run__c'a=: 7'
@@ -39,7 +55,6 @@ jcs''
 servers_jcs_''
 
 0 : 0
-server running on port 65201
 zmq ports are 'sticky'
 a server can be started after the first client requests
 a server can be stopped and restarted without problems with client requests
@@ -47,9 +62,8 @@ a server can serve any number of clients
 )
 
 NB. by convention the jcs port range is 65100 to 65299
-NB. and 65100 to 65199 are for Jd servers
 
-c=. jcsc 65201 NB. create client locale and connect to server
+c=. jcsc port NB. create client locale and connect to server
 run__c'a'
 NB. next sentence won't show until it completes - takes 5 seconds
 run__c'6!:3[5' NB. server sleeps for 5 and we wait for it to finish
@@ -65,23 +79,54 @@ killall_jcs_'' NB. clean slate - kill all servers, destroy all client/server loc
 servers_jcs_''
 jcs''
 
+NB. parallel each can be implemented with jcs
+d=: ?each 6$<2 2$0
+%. each d
+peinit_jcs_ 65100+i.4 NB. init 4 tasks for parallel each
+pe_jcs_ '%.';<d       NB. run calculations on 4 tasks
+foo=: %.
+foo each d
+pe_jcs_ 'foo';<d      NB. errors because foo not defined in tasks
+peset_jcs_ 'foo=: %.' NB. run sentence in each task to define foo
+pe_jcs_ 'foo';<d
+NB. required defns usually loaded from a script
+'goo=: +/@,' fwrite '~temp/pe.ijs'
+peload_jcs_ '~temp/pe.ijs'
+pe_jcs_ 'goo';<d
+NB. dyadic parallel each is supported
+1 %. each d             NB. J has generous conformance rules
+(6#1) %. each d
+(6#<1) %. each d
+pe_jcs_ '%.';(<6#<1),<d NB. pe requires strict conformance
+
+d=: ?each 6$<2000 2000$0 NB. more data for timings in next 2 sentences
+timex'%. each d'
+timex'pe_jcs_ ''%.'';<d' NB. faster because of parallel use of multiple cores
+NB. computation bound parallel has overheads
+NB. and runs faster but not (#tasks) times faster
+
+NB. see help_pe_jcs_ for help on parallel each
+
+NB. jcs can be be used for parallelism less structured than each
+help_warning_jcs_
+
+delays=. 3 2 1 3 3 3 1 2
+[jobs=: ((#delays)#<'6!:3 jcs_p0__'),.<"0 delays
+NB. 1st col is sentence to run and 2nd col is jcs_p0__ arg
+NB. in this simple example, the sentences are all the same
+NB. but in general they could be different
++/delays NB. time to run sequentially
+NB. next few sentences take several seconds to run
+pj_jcs_ 8 NB. run jobs on 8 tasks
+timex'pj_jcs_ 8' NB. time to run with 8 tasks
+timex'pj_jcs_ 2' NB. time to run with 2 tasks
+NB. tasks with execution interrupts such as file or internet ops
+NB. run well in parallel and can get significant benefit from multiple cores
+
 0 : 0
-jcs can be used for parallelism
-following example runs n jobs on m tasks
-)
-
-warning_jcs_
-
-NB. next step reads in a verb to run jobs on several tasks
-NB. the argument is: jobs, tasks [,job size]
-load 'net/jcs/qrun'
-
-NB. this creates 4 jobs on 2 tasks of size 2 - takes seconds to run:
-qrun 4 2 2
-
-0 : 0
-time qrun with 20 jobs and tasks between 1 and 4 and task size 6
-a quad core system running 4 tasks will run faster - but not 4 times faster
+typically a job needs a script loaded
+this can be done in the job sentence
+for example: jobfoo jcs_p0__[load'.....'
 )
 
 0 : 0
@@ -90,4 +135,3 @@ after running through the lab cleanly
 experiment with how it behaves with misuse and stress
 please report any problems and suggestions for improvements
 )
-help_jcs_ NB. jcs summary
