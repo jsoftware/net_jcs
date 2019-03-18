@@ -1,5 +1,4 @@
-LABTITLE=: 'Client/Server - parallel each - parallel jobs (raw)'
-
+NB. Lab: Client/Server - parallel each - parallel jobs
 require'~addons/net/jcs/jcs.ijs'
 
 0 : 0
@@ -89,8 +88,14 @@ foo each d
 pe_jcs_ 'foo';<d      NB. errors because foo not defined in tasks
 peset_jcs_ 'foo=: %.' NB. run sentence in each task to define foo
 pe_jcs_ 'foo';<d
+
 NB. required defns usually loaded from a script
-'goo=: +/@,' fwrite '~temp/pe.ijs'
+NB. in addition to info in help_warning_jcs_
+NB. possibly different configs need to be handled
+NB. for example, jcs server ~temp could be different from the client
+c=. {.petasks_jcs_
+fn=. run__c'jpath''~temp/pe.ijs''' NB. get path to temp file in server tasks
+'goo=: +/@,' fwrite  fn
 peload_jcs_ '~temp/pe.ijs'
 pe_jcs_ 'goo';<d
 NB. dyadic parallel each is supported
@@ -108,8 +113,6 @@ NB. and runs faster but not (#tasks) times faster
 NB. see help_pe_jcs_ for help on parallel each
 
 NB. jcs can be be used for parallelism less structured than each
-help_warning_jcs_
-
 delays=. 3 2 1 3 3 3 1 2
 [jobs=: ((#delays)#<'6!:3 jcs_p0__'),.<"0 delays
 NB. 1st col is sentence to run and 2nd col is jcs_p0__ arg
