@@ -227,12 +227,38 @@ end.
 x;ip;port
 )
 
+pipelined =: 0
+NB. startpipe firstpiperesult
+NB. Enters pipeline mode, in which each msg immediately returns the result of
+NB. the previous msg, and then starts executing the current msg.
+NB. The immediate result of startpipe is 'Pipeline started', and the result of the next msg
+NB. is the y arg
+NB. Runs in jcs locale
+startpipe =: 3 : 0
+pipelined_jcs_ =: 1
+piperesult_jcs_=:y
+'Pipeline started'
+)
+NB. stoppipe ''
+NB. Leaves pipeline mode, returning the result of the previous msg
+NB. Runs in jcs locale
+stoppipe =: 3 : 0
+pipelined_jcs_ =: 0
+''  NB. This will free the memory of the last piperesult
+)
+
+NB. Runs in instance locale
 runserver=: 3 : 0
 while. 1 do.
  'f1 f2'=. recvmsg'' NB. issues with break
  try.
-  r=. rpc 3!:2 f2
-  sendmsg 3!:1 r
+  if. pipelined_jcs_ do.
+   sendmsg 3!:1 piperesult_jcs_
+   piperesult_jcs_ =: rpc 3!:2 f2
+  else.
+   r=. rpc 3!:2 f2
+   sendmsg 3!:1 r
+  end.
  catchd.
   'error'sendmsg 13!:12''
  end. 
