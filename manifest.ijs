@@ -6,7 +6,7 @@ DESCRIPTION=: 0 : 0
 This is a J client/server built on zeromq.
 )
 
-VERSION=: '1.0.20'
+VERSION=: '1.0.21'
 
 RELEASE=: 'j806'
 
@@ -17,4 +17,8 @@ jcs.ijs
 jcs.ijt
 manifest.ijs
 start.ijs
+)
+
+DEPENDS=: 0 : 0
+net/zmq
 )
