@@ -52,6 +52,8 @@ c=: loc_jcs_ 65201     - locale from port
     poll_jcs_ 0;'';<{."1 jcs''  - '' could be extended to ZMQ_POLLIN, etc flags
     
     jcstvalidate c     - validate jcst tasks started properly
+    
+    nct_jcs_''         - return cores,cores*threads
 
 jcs port range: 65100+i.200
 
@@ -336,15 +338,41 @@ destroy''
 i.0 0
 )
 
+NB. su must be non-empty for superuser access
 rpcjd=: 3 : 0
 'access d'=: y
-if. su-:access do.
+if. (0~:#su)*.su-:access do. 
  do__ d
 else.
  jdaccess__' intask',~access
- jd__ d
+ jdx_jd_ d
 end.
 )
+
+NB. similiar to jd code in local jd
+jd=: 3 : 0
+jdlasty_z_=: y
+jdlast_z_=: run y
+t=. ;{.{.jdlast
+if. 'Jd error'-:t do.
+ t=. _2}.;jdlast,each <': '
+ 13!:8&3 t
+elseif. 'Jd report '-:10{.t do. ;{:jdlast 
+elseif. 'Jd OK'-:t          do. i.0 0
+elseif. 1                   do. jdlast
+end.
+)
+
+jdae=: 4 : 0
+try. 
+ jd y
+ 'did not get expected error'assert 0
+catchd.
+ t['did not get expected error text'assert +./x E. t=. ;1{jdlast
+end.
+)
+
+jdaccess=: 3 : 'i.0 0[access=: y'
 
 NB. set jcs_pa__,jcs_ps__,jcs_p0__,... and do__ jcs_ps__
 NB. access,sentence[,p0,p1,...]
@@ -616,4 +644,23 @@ while. #tasks do.
 end.
 if. error do. echo 'errors in result' end.
 rs/:ns
+)
+
+NB. return number of cores and cores*threads
+nct=: 3 : 0
+try.
+select. UNAME
+case.'Linux' do.
+ t=. <;._2 [2!:0'cat /proc/cpuinfo'
+ (1".11}.;(1 i.~(<'cpu cores :')=11{.each t){t),+/(<'processor')=9{.each t
+case.'Darwin' do.
+ 4 8
+case.'win' do.
+
+case. do.
+ 4 8
+end.
+catch.
+ 4 8
+end. 
 )
