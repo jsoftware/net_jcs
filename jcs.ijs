@@ -654,7 +654,7 @@ case.'Linux' do.
  t=. <;._2 [2!:0'cat /proc/cpuinfo'
  (1".11}.;(1 i.~(<'cpu cores :')=11{.each t){t),+/(<'processor')=9{.each t
 case.'Darwin' do.
- 4 8
+ 1".(2!:0'sysctl -n hw.physicalcpu hw.logicalcpu')rplc LF;' '
 case.'win' do.
  1".CRLF-.~;1{<;._2 spawn_jtask_'wmic cpu get numberofcores,numberoflogicalprocessors'
 case. do.
