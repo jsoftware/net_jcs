@@ -656,7 +656,7 @@ case.'Linux' do.
 case.'Darwin' do.
  4 8
 case.'win' do.
-
+ 1".CRLF-.~;1{<;._2 spawn_jtask_'wmic cpu get numberofcores,numberoflogicalprocessors'
 case. do.
  4 8
 end.
