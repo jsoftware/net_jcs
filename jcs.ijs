@@ -655,8 +655,8 @@ case.'Linux' do.
  ({:1".;(1 i.~(<'cpu cores')=9{.each t){t),+/(<'processor')=9{.each t
 case.'Darwin' do.
  1".(2!:0'sysctl -n hw.physicalcpu hw.logicalcpu')rplc LF;' '
-case.'win' do.
- 1".CRLF-.~;1{<;._2 spawn_jtask_'wmic cpu get numberofcores,numberoflogicalprocessors'
+case.'Win' do.
+ 2{.1".;1{<;._2 spawn_jtask_'wmic cpu get numberofcores,numberoflogicalprocessors'
 case. do.
  1 1
 end.
