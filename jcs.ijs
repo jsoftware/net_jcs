@@ -184,6 +184,7 @@ ctx_new''
 if. TYPE-:'server' do.
  S=: socket ZMQ_REP
  setsockopt S;ZMQ_LINGER;0
+ jcsserverobject__ =: 0&". > coname''  NB. sevtences are executed in base.  This gives a path to the jcs object
  try.
    bind S;'tcp://',address
  catch.
@@ -233,7 +234,7 @@ NB. Enters pipeline mode, in which each msg immediately returns the result of
 NB. the previous msg, and then starts executing the current msg.
 NB. The immediate result of startpipe is 'Pipeline started', and the result of the next msg
 NB. is the y arg
-NB. Runs in jcs locale
+NB. Executed as startpipe__jcsserverobject and thus runs in instance locale
 startpipe =: 3 : 0
 pipelined_jcs_ =: 1
 piperesult_jcs_=:y
@@ -241,13 +242,13 @@ piperesult_jcs_=:y
 )
 NB. stoppipe ''
 NB. Leaves pipeline mode, returning the result of the previous msg
-NB. Runs in jcs locale
+NB. Executed as stoppipe__jcsserverobject and thus runs in instance locale
 stoppipe =: 3 : 0
 pipelined_jcs_ =: 0
 ''  NB. This will free the memory of the last piperesult
 )
 
-NB. Runs in instance locale
+NB. Runs in instance locale on the server
 runserver=: 3 : 0
 while. 1 do.
  'f1 f2'=. recvmsg'' NB. issues with break
@@ -348,11 +349,15 @@ end.
 
 NB. set jcs_pa__,jcs_ps__,jcs_p0__,... and do__ jcs_ps__
 NB. access,sentence[,p0,p1,...]
+NB. Runs in the object locale, but executes sentences in base
 rpcdo=: 3 : 0
 ('jcs_pa__ jcs_ps__',;(<'__'),~each(<' jcs_p'),each ":each i._2+#y)=: y
-t=. nc__<jcs_ps__
-if.  0<t do. do__ '5!:5<jcs_ps__' return. end. 
-if. _1=t do. ('value error: ',jcs_ps__)13!:8[21 return. end.
+select. nc__<jcs_ps__
+case. 0;_2 do.  NB. noun is ok; malformed name is just a sentence
+case. _1 do. ('value error: ',jcs_ps__)13!:8[21 return.  NB. undefined word, error
+case. do. do__ '5!:5<jcs_ps__' return.  NB. non-noun: expunge it and exit
+end.
+NB. Erase any local names that were created, to avoid assignment conflicts in do__
 do__ jcs_ps__
 )
 
