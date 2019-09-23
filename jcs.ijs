@@ -44,9 +44,11 @@ c=: jcsc 65201         - create client locale
 c=: loc_jcs_ 65201     - locale from port
     servers_jcs_''     - server ports+pids for jcs port range
     servers_jcs_ p...  - server ports+pids for port(s)
+    
     killp_jcs_ p...    - kill server/client for port(s) p
     killp_jcs_ ''      - kill all ports
     killall_jcs_''     - kill all ports and do ctx_term
+    killpids_jcs_ ...  - kill pids
 
     poll_jcs_ timeout;'';<tasks - timeout milliseconds ; 0 immediate ; _1 forever
     poll_jcs_ 0;'';<{."1 jcs''  - '' could be extended to ZMQ_POLLIN, etc flags
@@ -61,14 +63,14 @@ jcs port range: 65100+i.200
 )
 
 help_pe=: 0 : 0
-parallel each
-tasks are initialized only once
- task init and script loads are overhead
- and should usually only be done once
+parallel each - also used for running job queue
+tasks are initialized only once - init and script loads are overhead
 
-   peinit_jcs_ ports NB.ports to init for pe
-   petasks_jcs_      NB. pe task locales
+   peinit_jcs_ ports NB. ports to init for pe
+   pekill_jcs_''     NB. kill pe locales and tasks
+   petasks_jcs_      NB. pe locales
    peports_jcs_      NB. pe ports
+   peservers_jcs_    NB. locales,.ports,.pids (PID set in locale when started)
    peset_jcs_  s     NB. run sentence s in each pe task
    peload_jcs_ ijs   NB. load script ijs in each pe task
    pe_jcs_ s;<right  NB. s each right
@@ -414,11 +416,16 @@ if.  ''-:y do. y=. {."1 s end.
 p=. {."1 s
 y=. y#~y e. p NB. remove ports not in use by servers
 pids=. 1{"1 s#~p e. y
-if. 0=#pids do. return. end.
-if. IFWIN do.
- shell 'taskkill /f ', ;(<' /pid '),each":each<"0 pids
-else.
- 2!:0 'kill ',":pids
+killpids pids
+)
+
+killpids=: 3 : 0
+if. 0~:#y do.
+ if. IFWIN do.
+  shell 'taskkill /f ', ;(<' /pid '),each":each<"0 y
+ else.
+  2!:0 'kill ',":y
+ end. 
 end. 
 i.0 0
 )
@@ -555,10 +562,27 @@ c=. >jcst each 65201+i.y
 
 NB. parallel each
 peinit=: 3 : 0
-killp peports
+pekill''
 peports=: y
 petasks=: jcst y
+for_n. petasks do. PID_jcs__n=: run__n '2!:6''''' end.
+petasks_jcs_
+)
+
+NB. shutdown pe tasks
+pekill=: 3 : 0
+for_n. petasks do.
+ try. runa__n 'exit 0' catch. killpids PID_jcs__n end.
+ destroy__n''
+end.
+peports=: petasks=: ''
 i.0 0
+)
+
+peservers=: 3 : 0
+r=. ''
+for_n. petasks do. r=. r,PID_jcs__n end.
+petasks,.(<"0 peports),.<"0 r
 )
 
 peset=: 3 : 0
