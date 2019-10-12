@@ -1,4 +1,6 @@
 NB. J client server - built on zmq
+
+NB. to avoid name clutter,  only the most common names are put in base
 jcst__=:   jcst_jcs_
 jcsc__=:   jcsc_jcs_
 jcss__=:   jcss_jcs_
@@ -35,6 +37,7 @@ c=: jcst '*:65201'     - create server task / client locale - bind any
 c=: jcss 65201         - create server locale - bind localhost
 c=: jcss '*:65201'     - create server locale - bind any
 c=: jcsc 65201         - create client locale
+c=: jcscraw 65220      - create server locale - serve normal sockets (ZMQ_STREAM)
 
     destroy__c''       - destroy client or server locale
     jcs''              - jcs locale report
@@ -50,8 +53,10 @@ c=: loc_jcs_ 65201     - locale from port
     killall_jcs_''     - kill all ports and do ctx_term
     killpids_jcs_ ...  - kill pids
 
-    poll_jcs_ timeout;'';<tasks - timeout milliseconds ; 0 immediate ; _1 forever
-    poll_jcs_ 0;'';<{."1 jcs''  - '' could be extended to ZMQ_POLLIN, etc flags
+    poll_jcs_ time;'';<tasks - time - timeout milliseconds ; 0 immediate ; _1 forever
+    poll_jcs_ 0;'';<{."1 jcs''  - '' tests each port for ready for read (2), write(4), or read+write(6)
+    poll_jcs_ 0;1 2 3;<tasks - test first for read, second for write, and third for read+write
+    
     
     jcstvalidate c     - validate jcst tasks started properly
     
@@ -167,6 +172,10 @@ jcss=: 3 : 0
 'jcs'conew~'server'vaddress y
 )
 
+jcssraw=: 3 : 0
+'jcs'conew~'serverraw'vaddress y
+)
+
 jcs=: 3 : 0
 t=. ;:'PORT IP S TYPE'
 r=. (0,#t)$''
@@ -185,10 +194,13 @@ address=. IP,':',":PORT
 S=: 0
 su=: ''
 ctx_new''
-if. TYPE-:'server' do.
- S=: socket ZMQ_REP
+select. TYPE
+
+case.'server';'serverraw' do.
+ STYPE=: TYPE
+ S=: socket (TYPE-:'serverraw'){ZMQ_REP,ZMQ_STREAM
  setsockopt S;ZMQ_LINGER;0
- jcsserverobject__ =: 0&". > coname''  NB. sevtences are executed in base.  This gives a path to the jcs object
+ jcsserverobject__ =: 0&". > coname''  NB. sentences are executed in base.  This gives a path to the jcs object
  try.
    bind S;'tcp://',address
  catch.
@@ -196,11 +208,13 @@ if. TYPE-:'server' do.
   destroy''
   e assert 0
  end.
-else.
+
+case.'client' do. 
  access=: ''
  S=: socket ZMQ_REQ
  setsockopt S;ZMQ_LINGER;0
  connect S;'tcp://',address
+
 end.
 )
 
@@ -268,6 +282,17 @@ while. 1 do.
   'error'sendmsg 13!:12''
  end. 
 end.
+)
+
+NB. called when there is data available - just adds it to the stream
+NB. data is trunctate to fit in the buffer!
+recvmsgraw=: 3 : 0
+r=. recv S;(256#' ');256;0
+r=. 'zmq_recv i x *c x i'cdxnm S;(5000#' ');5000;0
+c=. ;{.r
+'raw data truncated'assert c<:5000
+(>{.r){.;2{r
+D=: D,c{.;2{r
 )
 
 sendmsg=: 3 : 0
