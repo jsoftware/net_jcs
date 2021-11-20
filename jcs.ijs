@@ -112,7 +112,7 @@ doin=: 4 : '(<x)(4 : ''do__y x'')each<"0 y' NB. run sentence in each locale
 
 starttask=: 3 : 0 
 'server'vaddress y
-jc=. jpath'~bin/',('/usr/share/j/'-:13{.jpath'~install'){::'jconsole';'ijconsole'
+jc=. jpath'~bin/',(1 e. '/share/j/' E. jpath'~install'){::'jconsole';'ijconsole'
 d=. ('"','"',~hostpathsep jc),' ~addons/net/jcs/start.ijs  -js "start_jcs_ ''',(":y),'''"'
 if. IFWIN do. winserver d else. fork_jtask_ d,' > /dev/null 2>&1' end.
 jcsc y-.'*'
