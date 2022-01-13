@@ -17,6 +17,7 @@ if. _1=nc <'petasks' do. peports=: petasks=: '' end.
 
 PORTBASE=:   65100
 PORTS=:      PORTBASE+i.200 NB. jcs port range
+Debug=:      0   NB. display jconsole messages
 
 help=: 0 : 0
 see help_warning_jcs_ for critical info on programming servers
@@ -114,7 +115,7 @@ starttask=: 3 : 0
 'server'vaddress y
 jc=. jpath'~bin/',(1 e. '/share/j/' E. jpath'~install'){::'jconsole';'ijconsole'
 d=. ('"','"',~hostpathsep jc),' ~addons/net/jcs/start.ijs  -js "start_jcs_ ''',(":y),'''"'
-if. IFWIN do. winserver d else. fork_jtask_ d,' > /dev/null 2>&1' end.
+if. IFWIN do. winserver d else. fork_jtask_ d,(-.Debug)#' > /dev/null 2>&1' end.
 jcsc y-.'*'
 )
 
