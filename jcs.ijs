@@ -462,11 +462,10 @@ i=. y i.~>1{"1 t
 'port not in jcs'assert i<#t
 <":;{.i{t
 )
-
 servers=: 3 : 0
 p=. ;(y-:''){y;PORTS
 select. UNAME
-case. 'Linux';'OpenBSD' do.
+case. 'Linux';'FreeBSD';'OpenBSD' do.
  t=. jpath'~temp/fuser.txt'
  try.
   d=. 2!:1'fuser -n tcp ',(":p),' > "',t,'" 2>&1'
@@ -710,7 +709,7 @@ case.'Linux' do.
  ({:1".;(1 i.~(<'cpu cores')=9{.each t){t),+/(<'processor')=9{.each t
 case.'Darwin' do.
  1".(2!:0'sysctl -n hw.physicalcpu hw.logicalcpu')rplc LF;' '
-case.'OpenBSD' do.
+case.'FreeBSD';'OpenBSD' do.
  1".(2!:0'sysctl -n hw.ncpuonline hw.ncpu')rplc LF;' '
 case.'Win' do.
  2{.1".;1{<;._2 spawn_jtask_'wmic cpu get numberofcores,numberoflogicalprocessors'
